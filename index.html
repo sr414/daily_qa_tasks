@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Email Ops QA Tasks</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; font-size: 15px; color: #1a1a1a; background: #f7f7f5; min-height: 100vh; padding: 40px 16px 80px; }
+  .container { max-width: 700px; margin: 0 auto; background: #fff; border-radius: 8px; padding: 48px 48px 40px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -.3px; margin-bottom: 32px; }
+  .section { margin-bottom: 32px; }
+  .section-title { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #555; border-bottom: 1px solid #e5e5e5; padding-bottom: 8px; margin-bottom: 4px; }
+  .section-sub { font-size: 13px; font-style: italic; color: #888; margin-bottom: 12px; }
+  .item { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; }
+  .item.sub { padding-left: 28px; }
+  input[type="checkbox"] { margin-top: 2px; width: 16px; height: 16px; flex-shrink: 0; accent-color: #1a1a1a; cursor: pointer; }
+  input[type="checkbox"]:disabled { cursor: default; }
+  label { line-height: 1.5; cursor: pointer; }
+  label.disabled { cursor: default; }
+  .meta { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
+  .meta-field label, .field-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: #555; display: block; margin-bottom: 4px; }
+  .meta-field input[type="text"] { border: 1px solid #ddd; border-radius: 4px; padding: 8px 10px; font-family: inherit; font-size: 14px; width: 200px; }
+  .meta-field input[type="text"]:focus { outline: none; border-color: #1a1a1a; }
+  .campaign-block { border: 1px solid #e5e5e5; border-radius: 6px; padding: 20px 20px 12px; margin-bottom: 16px; position: relative; }
+  .campaign-block-title { font-size: 12px; font-weight: 700; letter-spacing: .6px; color: #888; text-transform: uppercase; margin-bottom: 12px; }
+  .campaign-name-field { margin-bottom: 14px; }
+  .campaign-name-field input[type="text"] { border: 1px solid #ddd; border-radius: 4px; padding: 8px 10px; font-family: inherit; font-size: 14px; width: 100%; }
+  .campaign-name-field input[type="text"]:focus { outline: none; border-color: #1a1a1a; }
+  .remove-btn { position: absolute; top: 14px; right: 16px; background: none; border: none; color: #bbb; font-size: 18px; cursor: pointer; line-height: 1; padding: 0; }
+  .remove-btn:hover { color: #e00; }
+  .add-campaign-btn { background: none; border: 1px dashed #bbb; border-radius: 4px; padding: 9px 18px; font-family: inherit; font-size: 13px; color: #666; cursor: pointer; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 6px; }
+  .add-campaign-btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
+  .btn { display: inline-block; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; padding: 12px 28px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .btn:hover { background: #333; }
+  .share-box { margin-top: 24px; background: #f0f7ec; border: 1px solid #c3ddb8; border-radius: 6px; padding: 16px 20px; }
+  .share-box p { font-size: 13px; color: #3a6e2a; margin-bottom: 10px; font-weight: 500; }
+  .share-row { display: flex; gap: 8px; align-items: center; }
+  .share-row input { flex: 1; border: 1px solid #c3ddb8; border-radius: 4px; padding: 8px 10px; font-size: 13px; font-family: monospace; background: #fff; color: #1a1a1a; }
+  .copy-btn { background: #3a6e2a; color: #fff; border: none; border-radius: 4px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap; }
+  .copy-btn:hover { background: #2d5520; }
+  /* Read-only */
+  .ro-header { margin-bottom: 24px; }
+  .ro-header .badge { display: inline-block; background: #eaf5e6; color: #2d6e1a; border: 1px solid #b8ddb0; border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600; letter-spacing: .5px; margin-bottom: 12px; }
+  .ro-meta { font-size: 13px; color: #555; margin-top: 6px; }
+  .unchecked-label { color: #bbb; }
+  .progress { font-size: 13px; color: #555; margin-bottom: 20px; }
+  .progress span { font-weight: 600; color: #1a1a1a; }
+  .ro-campaign-name { font-size: 13px; font-weight: 600; color: #444; background: #f5f5f3; border-radius: 4px; padding: 6px 10px; margin-bottom: 10px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="container" id="app"></div>
+<script>
+// Static sections (non-repeating)
+const DEPLOYMENT = { id: 'dep', section: "Checks >> Deployment", sub: "This should be the first QA of your day", items: [
+  { id: "dep1", label: "AM Deployment(s) FINISHED or RUNNING" },
+  { id: "dep2", label: "PM Deployment(s) SCHEDULED" },
+]};
+
+// Repeating per-campaign checks
+const PRETEST_ITEMS = [
+  { id: "pre1", label: "Campaign name is all lowercase" },
+  { id: "pre2", label: "Product Recs data feed attached" },
+  { id: "pre3", label: "Most current IHR snippets included" },
+  { id: "pre4", label: "SL/PH match calendar" },
+  { id: "pre5", label: "If Moores, language is correct" },
+  { id: "pre6", label: "Audience matches calendar, counts are as expected" },
+  { id: "pre7", label: "Suppressions added if requested in calendar" },
+  { id: "pre8", label: "WO-CRF is correct and EVERY element in content matches WO-CRF", children: [
+    { id: "pre8a", label: "LINKS" },
+    { id: "pre8b", label: "ALT TEXT" },
+    { id: "pre8c", label: "LEGAL" },
+  ]},
+  { id: "pre9", label: "If you find a discrepancy in WO-CRF, like a link is broken or there's no legal to match the content, you MUST call this out to approvers for a fix prior to Final QA" },
+  { id: "pre10", label: "ALERTS are on" },
+  { id: "pre11", label: "MOBILE VIEW", children: [
+    { id: "pre11a", label: "All images are set to full width on mobile" },
+    { id: "pre11b", label: "Text has left/right padding so it's not near the edge of mobile view" },
+    { id: "pre11c", label: "There's a non-breaking space added between last 2 words of headlines" },
+  ]},
+  { id: "pre12", label: "Consistent use of en dashes in pricing" },
+  { id: "pre13", label: "Brief check of mobile, web and desktop views in EoA to make sure there's absolutely no glaring issues" },
+];
+
+const FINAL_QA = { id: 'fin', section: "Checks >> Before Adding to Final QA", items: [
+  { id: "fin1", label: "ALL Approvers have signed off on design, content/SL-PH/legal, and links" },
+]};
+
+const SCHEDULING = { id: 'sch', section: "Checks >> Scheduling", items: [
+  { id: "sch1", label: "You have addressed every edit listed in QA doc and additional approval is not needed" },
+  { id: "sch2", label: "Once scheduled, confirm in designated column in QA doc and make sure am/pm are correct" },
+  { id: "sch3", label: "Add screenshot of scheduled campaigns to Email Ops + QA chat" },
+]};
+
+function staticIds(sec) {
+  const ids = [];
+  sec.items.forEach(it => { ids.push(it.id); if (it.children) it.children.forEach(c => ids.push(c.id)); });
+  return ids;
+}
+
+function campaignIds(prefix) {
+  const ids = [];
+  PRETEST_ITEMS.forEach(it => {
+    ids.push(prefix + it.id);
+    if (it.children) it.children.forEach(c => ids.push(prefix + c.id));
+  });
+  return ids;
+}
+
+let campaigns = [{ uid: 'c0' }]; // each has a uid
+
+function uid() { return 'c' + Math.random().toString(36).slice(2,7); }
+
+function encode(name, date, depChecked, campData, staticChecked) {
+  const data = { n: name, d: date, dc: depChecked, camps: campData, sc: staticChecked, ts: Date.now() };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+function decode(str) {
+  try { return JSON.parse(decodeURIComponent(escape(atob(str)))); } catch { return null; }
+}
+
+function renderStaticSection(sec, readonly, checkedSet) {
+  let html = `<div class="section"><div class="section-title">${sec.section}</div>`;
+  if (sec.sub) html += `<div class="section-sub">${sec.sub}</div>`;
+  sec.items.forEach(it => {
+    const ck = readonly ? checkedSet.has(it.id) : false;
+    const lbl = readonly ? (ck ? '' : 'unchecked-label') : '';
+    html += `<div class="item"><input type="checkbox" id="${it.id}" ${readonly ? 'disabled' : ''} ${ck ? 'checked' : ''}><label for="${it.id}" class="${lbl}">${it.label}</label></div>`;
+    if (it.children) it.children.forEach(c => {
+      const cc = readonly ? checkedSet.has(c.id) : false;
+      const cl = readonly ? (cc ? '' : 'unchecked-label') : '';
+      html += `<div class="item sub"><input type="checkbox" id="${c.id}" ${readonly ? 'disabled' : ''} ${cc ? 'checked' : ''}><label for="${c.id}" class="${cl}">${c.label}</label></div>`;
+    });
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderCampaignBlock(camp, idx, readonly, checkedSet, campName) {
+  const p = camp.uid + '_';
+  const removeable = !readonly && idx > 0;
+  let html = `<div class="campaign-block" id="block_${camp.uid}">`;
+  if (!readonly) html += removeable ? `<button class="remove-btn" onclick="removeCampaign('${camp.uid}')" title="Remove">×</button>` : '';
+  html += `<div class="campaign-block-title">Campaign ${idx + 1}</div>`;
+
+  if (readonly) {
+    html += campName ? `<div class="ro-campaign-name">📋 ${campName}</div>` : '';
+  } else {
+    html += `<div class="campaign-name-field"><div class="field-label">Campaign Name</div><input type="text" id="name_${camp.uid}" placeholder="e.g. tmw_20240416_promo_suits"></div>`;
+  }
+
+  PRETEST_ITEMS.forEach(it => {
+    const fid = p + it.id;
+    const ck = readonly ? checkedSet.has(fid) : false;
+    const lbl = readonly ? (ck ? '' : 'unchecked-label') : '';
+    html += `<div class="item"><input type="checkbox" id="${fid}" ${readonly ? 'disabled' : ''} ${ck ? 'checked' : ''}><label for="${fid}" class="${lbl}">${it.label}</label></div>`;
+    if (it.children) it.children.forEach(c => {
+      const cid = p + c.id;
+      const cc = readonly ? checkedSet.has(cid) : false;
+      const cl = readonly ? (cc ? '' : 'unchecked-label') : '';
+      html += `<div class="item sub"><input type="checkbox" id="${cid}" ${readonly ? 'disabled' : ''} ${cc ? 'checked' : ''}><label for="${cid}" class="${cl}">${c.label}</label></div>`;
+    });
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderForm() {
+  const app = document.getElementById('app');
+  const today = new Date();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  const yyyy = today.getFullYear();
+
+  let html = `<h1>Daily Email Ops QA Tasks</h1>
+  <div class="meta">
+    <div class="meta-field"><label for="submitter">Your Name</label><input type="text" id="submitter" placeholder="First Last" autocomplete="name"></div>
+    <div class="meta-field"><label for="date">Date</label><input type="text" id="date" value="${mm}/${dd}/${yyyy}"></div>
+  </div>`;
+
+  html += renderStaticSection(DEPLOYMENT, false, null);
+
+  html += `<div class="section"><div class="section-title">Checks >> Prior to Sending Pretest to Approvers</div>
+  <div class="section-sub">This section repeats per campaign — add a block for each campaign.</div>
+  <div id="campaign-blocks">`;
+  campaigns.forEach((c, i) => html += renderCampaignBlock(c, i, false, null, ''));
+  html += `</div>
+  <button class="add-campaign-btn" onclick="addCampaign()">＋ Add another campaign</button>
+  </div>`;
+
+  html += renderStaticSection(FINAL_QA, false, null);
+  html += renderStaticSection(SCHEDULING, false, null);
+
+  html += `<button class="btn" id="submitBtn">Submit & Generate Link</button>
+  <div id="shareBox"></div>`;
+
+  app.innerHTML = html;
+
+  document.getElementById('submitBtn').addEventListener('click', submit);
+}
+
+function addCampaign() {
+  campaigns.push({ uid: uid() });
+  refreshCampaignBlocks();
+}
+
+function removeCampaign(u) {
+  campaigns = campaigns.filter(c => c.uid !== u);
+  refreshCampaignBlocks();
+}
+
+function refreshCampaignBlocks() {
+  // Preserve existing values before re-render
+  const saved = {};
+  campaigns.forEach(c => {
+    const nameEl = document.getElementById('name_' + c.uid);
+    if (nameEl) saved['name_' + c.uid] = nameEl.value;
+    campaignIds(c.uid + '_').forEach(id => {
+      const el = document.getElementById(id);
+      if (el) saved[id] = el.checked;
+    });
+  });
+
+  const container = document.getElementById('campaign-blocks');
+  container.innerHTML = campaigns.map((c, i) => renderCampaignBlock(c, i, false, null, '')).join('');
+
+  // Restore values
+  Object.entries(saved).forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (typeof val === 'boolean') el.checked = val;
+    else el.value = val;
+  });
+}
+
+function submit() {
+  const name = document.getElementById('submitter').value.trim();
+  const date = document.getElementById('date').value.trim();
+  if (!name) { alert('Please enter your name.'); return; }
+
+  const depChecked = staticIds(DEPLOYMENT).filter(id => document.getElementById(id)?.checked);
+  const staticChecked = [...staticIds(FINAL_QA), ...staticIds(SCHEDULING)].filter(id => document.getElementById(id)?.checked);
+
+  const campData = campaigns.map(c => {
+    const nameVal = document.getElementById('name_' + c.uid)?.value.trim() || '';
+    const checked = campaignIds(c.uid + '_').filter(id => document.getElementById(id)?.checked);
+    return { uid: c.uid, name: nameVal, checked };
+  });
+
+  const encoded = encode(name, date, depChecked, campData, staticChecked);
+  const url = `${location.origin}${location.pathname}#${encoded}`;
+
+  document.getElementById('shareBox').innerHTML = `
+    <div class="share-box">
+      <p>✓ Checklist submitted! Share this link to show your completed QA:</p>
+      <div class="share-row">
+        <input type="text" id="shareUrl" value="${url}" readonly>
+        <button class="copy-btn" id="copyBtn">Copy</button>
+      </div>
+    </div>`;
+
+  document.getElementById('copyBtn').addEventListener('click', () => {
+    navigator.clipboard.writeText(url).then(() => {
+      document.getElementById('copyBtn').textContent = 'Copied!';
+      setTimeout(() => document.getElementById('copyBtn').textContent = 'Copy', 2000);
+    });
+  });
+  document.getElementById('shareUrl').select();
+  document.getElementById('shareBox').scrollIntoView({ behavior: 'smooth' });
+}
+
+function renderReadOnly(data) {
+  const app = document.getElementById('app');
+  const depSet = new Set(data.dc || []);
+  const staticSet = new Set(data.sc || []);
+  const ts = new Date(data.ts).toLocaleString();
+
+  // Count totals
+  let total = staticIds(DEPLOYMENT).length + staticIds(FINAL_QA).length + staticIds(SCHEDULING).length;
+  let done = [...depSet].length + [...staticSet].length;
+  (data.camps || []).forEach(c => {
+    const ckSet = new Set(c.checked);
+    total += campaignIds(c.uid + '_').length;
+    done += c.checked.length;
+  });
+
+  let html = `<div class="ro-header">
+    <div class="badge">✓ Completed</div>
+    <h1>Daily Email Ops QA Tasks</h1>
+    <div class="ro-meta"><strong>${data.n}</strong> &nbsp;·&nbsp; ${data.d} &nbsp;·&nbsp; Submitted ${ts}</div>
+  </div>
+  <div class="progress"><span>${done}/${total}</span> items checked</div>`;
+
+  html += renderStaticSection(DEPLOYMENT, true, depSet);
+
+  html += `<div class="section"><div class="section-title">Checks >> Prior to Sending Pretest to Approvers</div>`;
+  (data.camps || []).forEach((c, i) => {
+    html += renderCampaignBlock({ uid: c.uid }, i, true, new Set(c.checked), c.name);
+  });
+  html += `</div>`;
+
+  html += renderStaticSection(FINAL_QA, true, staticSet);
+  html += renderStaticSection(SCHEDULING, true, staticSet);
+
+  app.innerHTML = html;
+}
+
+// Init
+const hash = location.hash.slice(1);
+if (hash) {
+  const data = decode(hash);
+  if (data) renderReadOnly(data);
+  else renderForm();
+} else {
+  renderForm();
+}
+</script>
+</body>
+</html>
