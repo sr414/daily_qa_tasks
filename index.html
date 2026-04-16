@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Daily Email Ops QA Tasks</title>
+<title>Email Ops Pre-QA QA</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -18,7 +18,6 @@
   input[type="checkbox"] { margin-top: 2px; width: 16px; height: 16px; flex-shrink: 0; accent-color: #1a1a1a; cursor: pointer; }
   input[type="checkbox"]:disabled { cursor: default; }
   label { line-height: 1.5; cursor: pointer; }
-  label.disabled { cursor: default; }
   .meta { display: flex; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
   .meta-field label, .field-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .8px; color: #555; display: block; margin-bottom: 4px; }
   .meta-field input[type="text"] { border: 1px solid #ddd; border-radius: 4px; padding: 8px 10px; font-family: inherit; font-size: 14px; width: 200px; }
@@ -30,9 +29,13 @@
   .campaign-name-field input[type="text"]:focus { outline: none; border-color: #1a1a1a; }
   .remove-btn { position: absolute; top: 14px; right: 16px; background: none; border: none; color: #bbb; font-size: 18px; cursor: pointer; line-height: 1; padding: 0; }
   .remove-btn:hover { color: #e00; }
-  .add-campaign-btn { background: none; border: 1px dashed #bbb; border-radius: 4px; padding: 9px 18px; font-family: inherit; font-size: 13px; color: #666; cursor: pointer; margin-bottom: 8px; display: inline-flex; align-items: center; gap: 6px; }
+  .campaign-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .add-campaign-btn { background: none; border: 1px dashed #bbb; border-radius: 4px; padding: 9px 18px; font-family: inherit; font-size: 13px; color: #666; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
   .add-campaign-btn:hover { border-color: #1a1a1a; color: #1a1a1a; }
-  .btn { display: inline-block; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; padding: 12px 28px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+  .other-reminders-heading { font-size: 15px; font-weight: 700; text-decoration: underline; margin: 36px 0 20px; }
+  .gray-section { background: #f5f5f3; border-radius: 6px; padding: 20px 20px 8px; margin-bottom: 16px; }
+  .gray-section .section-title { color: #555; border-bottom-color: #ddd; }
+  .btn { display: inline-block; background: #1a1a1a; color: #fff; border: none; border-radius: 4px; padding: 12px 28px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
   .btn:hover { background: #333; }
   .share-box { margin-top: 24px; background: #f0f7ec; border: 1px solid #c3ddb8; border-radius: 6px; padding: 16px 20px; }
   .share-box p { font-size: 13px; color: #3a6e2a; margin-bottom: 10px; font-weight: 500; }
@@ -40,26 +43,23 @@
   .share-row input { flex: 1; border: 1px solid #c3ddb8; border-radius: 4px; padding: 8px 10px; font-size: 13px; font-family: monospace; background: #fff; color: #1a1a1a; }
   .copy-btn { background: #3a6e2a; color: #fff; border: none; border-radius: 4px; padding: 8px 14px; font-size: 13px; font-family: inherit; cursor: pointer; white-space: nowrap; }
   .copy-btn:hover { background: #2d5520; }
-  /* Read-only */
   .ro-header { margin-bottom: 24px; }
   .ro-header .badge { display: inline-block; background: #eaf5e6; color: #2d6e1a; border: 1px solid #b8ddb0; border-radius: 20px; padding: 4px 14px; font-size: 12px; font-weight: 600; letter-spacing: .5px; margin-bottom: 12px; }
   .ro-meta { font-size: 13px; color: #555; margin-top: 6px; }
   .unchecked-label { color: #bbb; }
   .progress { font-size: 13px; color: #555; margin-bottom: 20px; }
   .progress span { font-weight: 600; color: #1a1a1a; }
-  .ro-campaign-name { font-size: 13px; font-weight: 600; color: #444; background: #f5f5f3; border-radius: 4px; padding: 6px 10px; margin-bottom: 10px; margin-top: 4px; }
+  .ro-campaign-name { font-size: 13px; font-weight: 600; color: #444; background: #efefed; border-radius: 4px; padding: 6px 10px; margin-bottom: 10px; margin-top: 4px; }
 </style>
 </head>
 <body>
 <div class="container" id="app"></div>
 <script>
-// Static sections (non-repeating)
 const DEPLOYMENT = { id: 'dep', section: "Checks >> Deployment", sub: "This should be the first QA of your day", items: [
   { id: "dep1", label: "AM Deployment(s) FINISHED or RUNNING" },
   { id: "dep2", label: "PM Deployment(s) SCHEDULED" },
 ]};
 
-// Repeating per-campaign checks
 const PRETEST_ITEMS = [
   { id: "pre1", label: "Campaign name is all lowercase" },
   { id: "pre2", label: "Product Recs data feed attached" },
@@ -109,29 +109,28 @@ function campaignIds(prefix) {
   return ids;
 }
 
-let campaigns = [{ uid: 'c0' }]; // each has a uid
-
+let campaigns = [{ uid: 'c0' }];
 function uid() { return 'c' + Math.random().toString(36).slice(2,7); }
 
 function encode(name, date, depChecked, campData, staticChecked) {
   const data = { n: name, d: date, dc: depChecked, camps: campData, sc: staticChecked, ts: Date.now() };
   return btoa(unescape(encodeURIComponent(JSON.stringify(data))));
 }
-
 function decode(str) {
   try { return JSON.parse(decodeURIComponent(escape(atob(str)))); } catch { return null; }
 }
 
-function renderStaticSection(sec, readonly, checkedSet) {
-  let html = `<div class="section"><div class="section-title">${sec.section}</div>`;
+function renderStaticSection(sec, readonly, checkedSet, gray) {
+  let html = `<div class="${gray ? 'gray-section' : 'section'}">`;
+  html += `<div class="section-title">${sec.section}</div>`;
   if (sec.sub) html += `<div class="section-sub">${sec.sub}</div>`;
   sec.items.forEach(it => {
     const ck = readonly ? checkedSet.has(it.id) : false;
-    const lbl = readonly ? (ck ? '' : 'unchecked-label') : '';
+    const lbl = readonly && !ck ? 'unchecked-label' : '';
     html += `<div class="item"><input type="checkbox" id="${it.id}" ${readonly ? 'disabled' : ''} ${ck ? 'checked' : ''}><label for="${it.id}" class="${lbl}">${it.label}</label></div>`;
     if (it.children) it.children.forEach(c => {
       const cc = readonly ? checkedSet.has(c.id) : false;
-      const cl = readonly ? (cc ? '' : 'unchecked-label') : '';
+      const cl = readonly && !cc ? 'unchecked-label' : '';
       html += `<div class="item sub"><input type="checkbox" id="${c.id}" ${readonly ? 'disabled' : ''} ${cc ? 'checked' : ''}><label for="${c.id}" class="${cl}">${c.label}</label></div>`;
     });
   });
@@ -143,24 +142,22 @@ function renderCampaignBlock(camp, idx, readonly, checkedSet, campName) {
   const p = camp.uid + '_';
   const removeable = !readonly && idx > 0;
   let html = `<div class="campaign-block" id="block_${camp.uid}">`;
-  if (!readonly) html += removeable ? `<button class="remove-btn" onclick="removeCampaign('${camp.uid}')" title="Remove">×</button>` : '';
+  if (removeable) html += `<button class="remove-btn" onclick="removeCampaign('${camp.uid}')" title="Remove">×</button>`;
   html += `<div class="campaign-block-title">Campaign ${idx + 1}</div>`;
-
   if (readonly) {
     html += campName ? `<div class="ro-campaign-name">📋 ${campName}</div>` : '';
   } else {
     html += `<div class="campaign-name-field"><div class="field-label">Campaign Name</div><input type="text" id="name_${camp.uid}" placeholder="e.g. tmw_20240416_promo_suits"></div>`;
   }
-
   PRETEST_ITEMS.forEach(it => {
     const fid = p + it.id;
     const ck = readonly ? checkedSet.has(fid) : false;
-    const lbl = readonly ? (ck ? '' : 'unchecked-label') : '';
+    const lbl = readonly && !ck ? 'unchecked-label' : '';
     html += `<div class="item"><input type="checkbox" id="${fid}" ${readonly ? 'disabled' : ''} ${ck ? 'checked' : ''}><label for="${fid}" class="${lbl}">${it.label}</label></div>`;
     if (it.children) it.children.forEach(c => {
       const cid = p + c.id;
       const cc = readonly ? checkedSet.has(cid) : false;
-      const cl = readonly ? (cc ? '' : 'unchecked-label') : '';
+      const cl = readonly && !cc ? 'unchecked-label' : '';
       html += `<div class="item sub"><input type="checkbox" id="${cid}" ${readonly ? 'disabled' : ''} ${cc ? 'checked' : ''}><label for="${cid}" class="${cl}">${c.label}</label></div>`;
     });
   });
@@ -175,30 +172,31 @@ function renderForm() {
   const dd = String(today.getDate()).padStart(2,'0');
   const yyyy = today.getFullYear();
 
-  let html = `<h1>Daily Email Ops QA Tasks</h1>
+  let html = `<h1>Email Ops Pre-QA QA</h1>
   <div class="meta">
     <div class="meta-field"><label for="submitter">Your Name</label><input type="text" id="submitter" placeholder="First Last" autocomplete="name"></div>
     <div class="meta-field"><label for="date">Date</label><input type="text" id="date" value="${mm}/${dd}/${yyyy}"></div>
   </div>`;
-
-  html += renderStaticSection(DEPLOYMENT, false, null);
 
   html += `<div class="section"><div class="section-title">Checks >> Prior to Sending Pretest to Approvers</div>
   <div class="section-sub">This section repeats per campaign — add a block for each campaign.</div>
   <div id="campaign-blocks">`;
   campaigns.forEach((c, i) => html += renderCampaignBlock(c, i, false, null, ''));
   html += `</div>
-  <button class="add-campaign-btn" onclick="addCampaign()">＋ Add another campaign</button>
+  <div class="campaign-actions">
+    <button class="add-campaign-btn" onclick="addCampaign()">＋ Add another campaign</button>
+    <button class="btn" id="submitBtn">Submit & Generate Link</button>
+  </div>
   </div>`;
 
-  html += renderStaticSection(FINAL_QA, false, null);
-  html += renderStaticSection(SCHEDULING, false, null);
+  html += `<div class="other-reminders-heading">OTHER DAILY QA TASK REMINDERS</div>`;
+  html += renderStaticSection(DEPLOYMENT, false, null, true);
+  html += renderStaticSection(FINAL_QA, false, null, true);
+  html += renderStaticSection(SCHEDULING, false, null, true);
 
-  html += `<button class="btn" id="submitBtn">Submit & Generate Link</button>
-  <div id="shareBox"></div>`;
+  html += `<div id="shareBox"></div>`;
 
   app.innerHTML = html;
-
   document.getElementById('submitBtn').addEventListener('click', submit);
 }
 
@@ -213,7 +211,6 @@ function removeCampaign(u) {
 }
 
 function refreshCampaignBlocks() {
-  // Preserve existing values before re-render
   const saved = {};
   campaigns.forEach(c => {
     const nameEl = document.getElementById('name_' + c.uid);
@@ -223,11 +220,8 @@ function refreshCampaignBlocks() {
       if (el) saved[id] = el.checked;
     });
   });
-
   const container = document.getElementById('campaign-blocks');
   container.innerHTML = campaigns.map((c, i) => renderCampaignBlock(c, i, false, null, '')).join('');
-
-  // Restore values
   Object.entries(saved).forEach(([id, val]) => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -243,7 +237,6 @@ function submit() {
 
   const depChecked = staticIds(DEPLOYMENT).filter(id => document.getElementById(id)?.checked);
   const staticChecked = [...staticIds(FINAL_QA), ...staticIds(SCHEDULING)].filter(id => document.getElementById(id)?.checked);
-
   const campData = campaigns.map(c => {
     const nameVal = document.getElementById('name_' + c.uid)?.value.trim() || '';
     const checked = campaignIds(c.uid + '_').filter(id => document.getElementById(id)?.checked);
@@ -261,7 +254,6 @@ function submit() {
         <button class="copy-btn" id="copyBtn">Copy</button>
       </div>
     </div>`;
-
   document.getElementById('copyBtn').addEventListener('click', () => {
     navigator.clipboard.writeText(url).then(() => {
       document.getElementById('copyBtn').textContent = 'Copied!';
@@ -278,23 +270,19 @@ function renderReadOnly(data) {
   const staticSet = new Set(data.sc || []);
   const ts = new Date(data.ts).toLocaleString();
 
-  // Count totals
   let total = staticIds(DEPLOYMENT).length + staticIds(FINAL_QA).length + staticIds(SCHEDULING).length;
   let done = [...depSet].length + [...staticSet].length;
   (data.camps || []).forEach(c => {
-    const ckSet = new Set(c.checked);
     total += campaignIds(c.uid + '_').length;
     done += c.checked.length;
   });
 
   let html = `<div class="ro-header">
     <div class="badge">✓ Completed</div>
-    <h1>Daily Email Ops QA Tasks</h1>
+    <h1>Email Ops Pre-QA QA</h1>
     <div class="ro-meta"><strong>${data.n}</strong> &nbsp;·&nbsp; ${data.d} &nbsp;·&nbsp; Submitted ${ts}</div>
   </div>
   <div class="progress"><span>${done}/${total}</span> items checked</div>`;
-
-  html += renderStaticSection(DEPLOYMENT, true, depSet);
 
   html += `<div class="section"><div class="section-title">Checks >> Prior to Sending Pretest to Approvers</div>`;
   (data.camps || []).forEach((c, i) => {
@@ -302,13 +290,14 @@ function renderReadOnly(data) {
   });
   html += `</div>`;
 
-  html += renderStaticSection(FINAL_QA, true, staticSet);
-  html += renderStaticSection(SCHEDULING, true, staticSet);
+  html += `<div class="other-reminders-heading">OTHER DAILY QA TASK REMINDERS</div>`;
+  html += renderStaticSection(DEPLOYMENT, true, depSet, true);
+  html += renderStaticSection(FINAL_QA, true, staticSet, true);
+  html += renderStaticSection(SCHEDULING, true, staticSet, true);
 
   app.innerHTML = html;
 }
 
-// Init
 const hash = location.hash.slice(1);
 if (hash) {
   const data = decode(hash);
